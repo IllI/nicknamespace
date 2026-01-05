@@ -1,58 +1,16 @@
 import Link from 'next/link';
+import { createClient } from '@/utils/supabase/server';
 
-// Mock product data - in a real app this would come from a database
-const mockProducts = [
-  {
-    id: '1',
-    name: 'Vintage Camera',
-    description: 'A beautiful vintage camera perfect for photography enthusiasts.',
-    price: '$299.99',
-    image: '/placeholder-camera.jpg',
-    category: 'Electronics'
-  },
-  {
-    id: '2',
-    name: 'Ceramic Vase',
-    description: 'Handcrafted ceramic vase with intricate patterns.',
-    price: '$89.99',
-    image: '/placeholder-vase.jpg',
-    category: 'Home Decor'
-  },
-  {
-    id: '3',
-    name: 'Wooden Sculpture',
-    description: 'Artisan wooden sculpture carved from sustainable wood.',
-    price: '$149.99',
-    image: '/placeholder-sculpture.jpg',
-    category: 'Art'
-  },
-  {
-    id: '4',
-    name: 'Metal Figurine',
-    description: 'Detailed metal figurine with antique finish.',
-    price: '$199.99',
-    image: '/placeholder-figurine.jpg',
-    category: 'Collectibles'
-  },
-  {
-    id: '5',
-    name: 'Glass Ornament',
-    description: 'Delicate glass ornament with hand-painted details.',
-    price: '$59.99',
-    image: '/placeholder-ornament.jpg',
-    category: 'Home Decor'
-  },
-  {
-    id: '6',
-    name: 'Leather Accessory',
-    description: 'Premium leather accessory with custom engraving.',
-    price: '$129.99',
-    image: '/placeholder-leather.jpg',
-    category: 'Accessories'
-  }
-];
+export default async function ProductsPage() {
+  const supabase = createClient();
 
-export default function ProductsPage() {
+  // Fetch real products from database
+  const { data: products, error } = await supabase
+    .from('innovative_products')
+    .select('*')
+    .eq('is_active', true)
+    .order('created_at', { ascending: false });
+
   return (
     <section className="min-h-screen bg-black">
       <div className="max-w-6xl px-4 py-8 mx-auto sm:px-6 sm:pt-24 lg:px-8">
@@ -110,56 +68,79 @@ export default function ProductsPage() {
           </div>
         </div>
 
+        {/* Error State */}
+        {error && (
+          <div className="p-4 mb-8 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+            Error loading products: {error.message}
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!error && (!products || products.length === 0) && (
+          <div className="flex flex-col items-center justify-center py-24 bg-zinc-900/30 rounded-2xl border border-dashed border-zinc-800 mb-12">
+            <svg className="w-20 h-20 mx-auto mb-4 text-zinc-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+            <h3 className="text-lg font-medium text-zinc-400">No products available yet</h3>
+            <p className="text-sm text-zinc-500 mt-2">Check back soon for new 3D print-ready models!</p>
+          </div>
+        )}
+
         {/* Products Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {mockProducts.map((product) => (
-            <Link
-              key={product.id}
-              href={`/products/${product.id}`}
-              className="bg-zinc-900 rounded-lg overflow-hidden hover:bg-zinc-800 transition-colors group"
-            >
-              {/* Product Image */}
-              <div className="w-full h-64 bg-zinc-800 flex items-center justify-center">
-                <div className="text-center">
-                  <svg className="w-20 h-20 mx-auto mb-2 text-zinc-600 group-hover:text-zinc-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <p className="text-xs text-zinc-600">{product.name}</p>
+        {!error && products && products.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {products.map((product: any) => (
+              <Link
+                key={product.id}
+                href={`/product/${product.slug}`}
+                className="bg-zinc-900 rounded-lg overflow-hidden hover:bg-zinc-800 transition-colors group"
+              >
+                {/* Product Image */}
+                <div className="w-full h-64 bg-zinc-800 flex items-center justify-center overflow-hidden">
+                  {product.hero_image ? (
+                    <img
+                      src={product.hero_image}
+                      alt={product.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="text-center">
+                      <svg className="w-20 h-20 mx-auto mb-2 text-zinc-600 group-hover:text-zinc-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <p className="text-xs text-zinc-600">{product.name}</p>
+                    </div>
+                  )}
                 </div>
-              </div>
 
-              {/* Product Info */}
-              <div className="p-6">
-                <div className="mb-3">
-                  <span className="inline-block px-2 py-1 bg-zinc-800 text-zinc-400 rounded text-xs">
-                    {product.category}
-                  </span>
-                </div>
+                {/* Product Info */}
+                <div className="p-6">
+                  <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-pink-400 transition-colors">
+                    {product.name}
+                  </h3>
 
-                <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-pink-400 transition-colors">
-                  {product.name}
-                </h3>
+                  {product.tagline && (
+                    <p className="text-zinc-400 text-sm mb-4 line-clamp-2">
+                      {product.tagline}
+                    </p>
+                  )}
 
-                <p className="text-zinc-400 text-sm mb-4 line-clamp-2">
-                  {product.description}
-                </p>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-lg font-bold text-white">
-                    {product.price}
-                  </span>
-
-                  <div className="flex items-center text-sm text-zinc-400">
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                    </svg>
-                    3D Ready
+                  <div className="flex items-center justify-between mt-4">
+                    <div className="flex items-center text-sm text-pink-400">
+                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                      </svg>
+                      3D Ready
+                    </div>
+                    <span className="text-sm text-zinc-500 group-hover:text-pink-400 transition-colors">
+                      View Details →
+                    </span>
                   </div>
                 </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+              </Link>
+            ))}
+          </div>
+        )}
 
         {/* Bottom CTA */}
         <div className="mt-16 text-center">
