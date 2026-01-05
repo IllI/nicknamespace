@@ -5,6 +5,7 @@ import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader.js';
 import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
+import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { CDNIntegration } from '@/lib/utils/cdn-integration';
 
 interface CompressionOptions {
@@ -56,7 +57,7 @@ export class FileCompressionService {
     options: Partial<CompressionOptions> = {}
   ): Promise<CompressionResult> {
     const startTime = Date.now();
-    
+
     const defaultOptions: CompressionOptions = {
       targetReduction: 0.3, // 30% reduction by default
       preserveQuality: true,
@@ -91,14 +92,14 @@ export class FileCompressionService {
 
       // Apply compression techniques
       const compressedGeometry = await this.applyCompression(geometry, defaultOptions);
-      
+
       const compressedVertices = compressedGeometry.attributes.position.count;
       const compressedFaces = compressedGeometry.index ? compressedGeometry.index.count / 3 : compressedVertices / 3;
 
       // Export compressed model
       const exporter = new STLExporter();
       const compressedData = exporter.parse(new THREE.Mesh(compressedGeometry), { binary: true });
-      const compressedBuffer = Buffer.from(compressedData);
+      const compressedBuffer = Buffer.from((compressedData as any).buffer || compressedData);
       const compressedSize = compressedBuffer.length;
 
       // Calculate quality score
@@ -162,7 +163,7 @@ export class FileCompressionService {
 
     } catch (error) {
       const processingTime = Date.now() - startTime;
-      
+
       return {
         success: false,
         originalSizeBytes: 0,
@@ -188,10 +189,10 @@ export class FileCompressionService {
     geometry: THREE.BufferGeometry,
     options: CompressionOptions
   ): Promise<THREE.BufferGeometry> {
-    const compressed = geometry.clone();
+    let compressed = geometry.clone();
 
     // 1. Merge duplicate vertices
-    compressed.mergeVertices();
+    compressed = BufferGeometryUtils.mergeVertices(compressed);
 
     // 2. Simplify geometry if needed
     if (options.targetReduction > 0.1) {
@@ -226,7 +227,7 @@ export class FileCompressionService {
       // Non-indexed geometry - simple vertex reduction
       const targetVertices = Math.floor(positions.length / 3 * (1 - targetReduction));
       const step = Math.ceil((positions.length / 3) / targetVertices);
-      
+
       const newPositions: number[] = [];
       for (let i = 0; i < positions.length; i += step * 3) {
         newPositions.push(positions[i], positions[i + 1], positions[i + 2]);
@@ -249,9 +250,9 @@ export class FileCompressionService {
     // Ensure manifold mesh (no holes, proper orientation)
     // Remove degenerate triangles
     // Ensure proper winding order
-    
+
     const optimized = geometry.clone();
-    
+
     // Remove degenerate triangles (triangles with zero area)
     if (optimized.index) {
       const positions = optimized.attributes.position.array;
@@ -295,7 +296,7 @@ export class FileCompressionService {
     try {
       // Create a more sophisticated thumbnail
       // This would ideally use a headless browser or server-side Three.js rendering
-      
+
       const fileOrg = this.cdn.getFileOrganization(userId, jobId);
       const thumbnailPath = fileOrg.thumbnailPath;
 
@@ -332,25 +333,25 @@ export class FileCompressionService {
   private async createStatsThumbnail(stats: any): Promise<Buffer> {
     // Create a simple WebP thumbnail with model info
     // In production, this would use a proper image generation library
-    
+
     const thumbnailSize = 256;
     const data = Buffer.alloc(thumbnailSize * thumbnailSize * 4); // RGBA
-    
+
     // Fill with a gradient based on model complexity
     const complexity = Math.min(stats.vertices / 10000, 1); // Normalize to 0-1
-    
+
     for (let y = 0; y < thumbnailSize; y++) {
       for (let x = 0; x < thumbnailSize; x++) {
         const offset = (y * thumbnailSize + x) * 4;
         const gradient = (y / thumbnailSize) * complexity;
-        
+
         data[offset] = Math.floor(100 + gradient * 155);     // R
         data[offset + 1] = Math.floor(150 + gradient * 105); // G
         data[offset + 2] = Math.floor(200 + gradient * 55);  // B
         data[offset + 3] = 255;                              // A
       }
     }
-    
+
     return data.slice(0, 2048); // Return a small placeholder
   }
 
@@ -366,13 +367,13 @@ export class FileCompressionService {
   ): number {
     const vertexRetention = compressedVertices / originalVertices;
     const faceRetention = compressedFaces / originalFaces;
-    
+
     // Weight vertex and face retention
     const geometryScore = (vertexRetention * 0.6 + faceRetention * 0.4);
-    
+
     // Adjust based on preservation settings
     const qualityMultiplier = options.preserveQuality ? 1.0 : 0.8;
-    
+
     return Math.min(geometryScore * qualityMultiplier, 1.0);
   }
 
@@ -392,13 +393,13 @@ export class FileCompressionService {
       switch (format) {
         case 'stl': {
           const loader = new STLLoader();
-          return loader.parse(arrayBuffer);
+          return loader.parse(arrayBuffer as ArrayBuffer);
         }
         case 'obj': {
           const loader = new OBJLoader();
           const text = new TextDecoder().decode(arrayBuffer);
           const object = loader.parse(text);
-          
+
           let geometry: THREE.BufferGeometry | null = null;
           object.traverse((child) => {
             if (child instanceof THREE.Mesh && child.geometry) {
@@ -409,7 +410,7 @@ export class FileCompressionService {
         }
         case 'ply': {
           const loader = new PLYLoader();
-          return loader.parse(arrayBuffer);
+          return loader.parse(arrayBuffer as ArrayBuffer);
         }
         default:
           throw new Error(`Unsupported format: ${format}`);
@@ -451,7 +452,7 @@ export class FileCompressionService {
     const batchSize = 3;
     for (let i = 0; i < jobs.length; i += batchSize) {
       const batch = jobs.slice(i, i + batchSize);
-      
+
       const batchPromises = batch.map(async (job) => {
         const result = await this.compressModelFile(
           job.userId,
