@@ -226,6 +226,7 @@ export default function ProductForm({ initialData, isEditing = false }: ProductF
                             Hero Image
                         </h3>
                         <div className="relative group aspect-video bg-zinc-900 border-2 border-dashed border-zinc-800 rounded-xl flex items-center justify-center overflow-hidden">
+                            <input id="hero-upload" type="file" className="hidden" onChange={e => handleUpload(e, 'hero_image')} />
                             {formData.hero_image ? (
                                 <>
                                     <img src={formData.hero_image} className="w-full h-full object-cover" />
@@ -239,7 +240,6 @@ export default function ProductForm({ initialData, isEditing = false }: ProductF
                                 <div className="text-center">
                                     <Plus className="w-10 h-10 mx-auto text-zinc-600 mb-2" />
                                     <p className="text-sm text-zinc-500">Click to upload hero image</p>
-                                    <input id="hero-upload" type="file" className="hidden" onChange={e => handleUpload(e, 'hero_image')} />
                                     <Button type="button" variant="link" className="text-pink-500" onClick={() => (document.getElementById('hero-upload') as HTMLInputElement).click()}>
                                         Browse file
                                     </Button>
@@ -305,6 +305,7 @@ export default function ProductForm({ initialData, isEditing = false }: ProductF
                                 3D Model Preview
                             </h3>
                             <div className="relative group aspect-video bg-zinc-900 border-2 border-dashed border-zinc-800 rounded-xl flex items-center justify-center">
+                                <input id="model-upload" type="file" className="hidden" onChange={e => handleUpload(e, 'model_3d_url')} />
                                 {formData.model_3d_url ? (
                                     <div className="text-center">
                                         <Box className="w-10 h-10 mx-auto text-emerald-500 mb-2" />
@@ -317,7 +318,6 @@ export default function ProductForm({ initialData, isEditing = false }: ProductF
                                     <div className="text-center">
                                         <Plus className="w-8 h-8 mx-auto text-zinc-600 mb-2" />
                                         <p className="text-xs text-zinc-500">Upload GLB/STL for 3D Viewer</p>
-                                        <input id="model-upload" type="file" className="hidden" onChange={e => handleUpload(e, 'model_3d_url')} />
                                         <Button type="button" variant="link" size="sm" onClick={() => (document.getElementById('model-upload') as HTMLInputElement).click()}>
                                             Browse model
                                         </Button>
