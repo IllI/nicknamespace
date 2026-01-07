@@ -1,8 +1,8 @@
-import { 
-  PrintJobRequest, 
-  PrintJobResponse, 
-  PrintServiceError, 
-  HealthStatus 
+import {
+  PrintJobRequest,
+  PrintJobResponse,
+  PrintServiceError,
+  HealthStatus
 } from '@/lib/types/direct-print-jobs';
 
 export class PrintServiceClient {
@@ -11,7 +11,7 @@ export class PrintServiceClient {
   private maxRetries: number;
 
   constructor() {
-    this.baseUrl = process.env.PRINT_SERVICE_URL || 'http://localhost:3001';
+    this.baseUrl = process.env.PRINT_SERVICE_URL || 'http://localhost:4141';
     this.timeout = 30000; // 30 seconds
     this.maxRetries = 3;
   }
@@ -21,9 +21,9 @@ export class PrintServiceClient {
    */
   async submitPrintJob(jobData: PrintJobRequest): Promise<PrintJobResponse> {
     const url = `${this.baseUrl}/api/print-job`;
-    
+
     let lastError: Error | null = null;
-    
+
     for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
       try {
         const response = await this.makeRequest(url, {
@@ -53,7 +53,7 @@ export class PrintServiceClient {
 
       } catch (error) {
         lastError = error instanceof Error ? error : new Error('Unknown error');
-        
+
         if (attempt < this.maxRetries) {
           // Exponential backoff: wait 2^attempt seconds
           const delay = Math.pow(2, attempt) * 1000;

@@ -62,7 +62,7 @@ export interface DirectPrintConfig {
 export function getDirectPrintConfig(): DirectPrintConfig {
   return {
     printService: {
-      url: process.env.PRINT_SERVICE_URL || 'http://localhost:3001',
+      url: process.env.PRINT_SERVICE_URL || 'http://localhost:4141',
       apiKey: process.env.PRINT_SERVICE_API_KEY || '',
       timeout: parseInt(process.env.PRINT_SERVICE_TIMEOUT_MS || '30000'),
       retryAttempts: parseInt(process.env.PRINT_SERVICE_RETRY_ATTEMPTS || '3'),
@@ -128,9 +128,9 @@ export function validateDirectPrintConfig(config: DirectPrintConfig): void {
     errors.push('DIRECT_PRINT_MAX_FILE_SIZE_MB must be greater than 0');
   }
 
-  if (config.directPrint.buildVolume.x <= 0 || 
-      config.directPrint.buildVolume.y <= 0 || 
-      config.directPrint.buildVolume.z <= 0) {
+  if (config.directPrint.buildVolume.x <= 0 ||
+    config.directPrint.buildVolume.y <= 0 ||
+    config.directPrint.buildVolume.z <= 0) {
     errors.push('Build volume dimensions must be greater than 0');
   }
 

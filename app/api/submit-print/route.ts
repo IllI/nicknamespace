@@ -1,7 +1,7 @@
 // API route following API_QUICK_REFERENCE.md specifications
 import { NextRequest, NextResponse } from 'next/server';
 
-const PRINT_SERVICE_URL = process.env.PRINT_SERVICE_URL || 'http://localhost:3001';
+const PRINT_SERVICE_URL = process.env.PRINT_SERVICE_URL || 'http://localhost:4141';
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,16 +30,16 @@ export async function POST(request: NextRequest) {
     });
 
     const data = await response.json();
-    
+
     // Return response in API-compliant format
-    return NextResponse.json(data, { 
-      status: response.ok ? 200 : 500 
+    return NextResponse.json(data, {
+      status: response.ok ? 200 : 500
     });
-    
+
   } catch (error) {
     console.error('Print service error:', error);
     return NextResponse.json(
-      { 
+      {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to connect to print service',
         timestamp: new Date().toISOString()

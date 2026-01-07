@@ -92,8 +92,13 @@ export async function POST(req: Request) {
 
         if (storagePath) {
             try {
-                const printServiceUrl = process.env.PRINT_SERVICE_URL || 'http://localhost:3001';
-                console.log('📤 Submitting print job to:', printServiceUrl);
+                // 1. Prioritize explicitly set environment variable
+                // 2. Fall back to localhost in dev (for testing on the host itself)
+                // 3. Fall back to public IP for production/outside access
+                const printServiceUrl = process.env.PRINT_SERVICE_URL ||
+                    (process.env.NODE_ENV === 'development' ? 'http://localhost:4141' : 'http://99.126.108.237:4141');
+
+                console.log(`📤 Submitting print job to:`, printServiceUrl);
 
                 const printResponse = await fetch(`${printServiceUrl}/api/print-job`, {
                     method: 'POST',
